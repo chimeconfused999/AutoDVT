@@ -1,5 +1,8 @@
 from flask import Flask, request
 import numpy as np
+import install
+
+
 
 app = Flask(__name__)
 def test(n1, n2):
