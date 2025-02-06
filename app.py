@@ -13,6 +13,9 @@ cyl = Geo2STL({"fn": fn})
 with open("parameters.json", "r") as f:
     DashKey = json.load(f)
 
+
+d1 = [{"x":['2030-10-04', '2025-11-04', '2023-12-04'], "y": [90, 40, 60], "type": "scatter"}];
+print(d1)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -27,7 +30,8 @@ def index():
         cyl.Extractx2D()  # ✅ This ensures `self.x2d` is created before plotting
         cyl.mesh2stl()
         test = ["a", 1]
-        return jsonify(test)  # ✅ Now `self.x2d` exists
+        #return jsonify(test)  # ✅ Now `self.x2d` exists
+        return jsonify(d1)
 
     return render_template("index.html", params=DashKey)
 
