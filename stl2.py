@@ -1,16 +1,27 @@
 import numpy as np, base64, matplotlib.pyplot as plt, json, plotly.graph_objects as go
+import json, plotly
 from IPython.display import HTML, display
 from ipywidgets import Button, HBox, VBox, widgets
 from mpl_toolkits.mplot3d import art3d
 from stl import mesh
 from plotly.subplots import make_subplots
 
-
 class Geo2STL:
     def __init__(self, O={}):
         defValue = {"nsd":3, "nen":3, "fn":"generated_cylinder.stl"}
-        for k,v in O.items(): defValue[k]=v
-        self.P = defValue
+        if isinstance(O, dict):
+          for k,v in O.items(): defValue[k]=v
+          self.P = defValue
+    def readParam(self, f="parameters.json", debug = False):
+      try:
+        with open(f, "r") as file:
+          self.DashKey = json.load(file)
+          if debug: print(self.DashKey)
+      except FileNotFoundError:
+          if debug:print("File not found!")
+      except json.JSONDecodeError:
+          if debug:print("Error decoding JSON!")
+
     def Init(self,O={}):
       for k,v in O.items(): self.P[k]=v
       ntheta = self.P["ntheta"]; nheight = self.P["nheight"]; nsd = self.P["nsd"]; nen = self.P["nen"];
@@ -86,16 +97,37 @@ class Geo2STL:
       n2d=ij2nn[0,:]; n2d=np.append(n2d,np.flip(ij2nn[round(P["ntheta"]/2),:])); n2d=np.append(n2d,0)
       xx=x3d[n2d,0]; yy=x3d[n2d,2]
       self.x2d = [xx, yy]
+    def Extractx2D(self, O={}):
+      ij2nn=self.ij2nn; x3d=self.x3d; ien=self.ien;  P=self.P;
+      n2d=ij2nn[0,:]; 
+      n2d=np.append(n2d, np.flip(ij2nn[round(P["ntheta"]/2),:]))
+      n2d=np.append(n2d, 0)
+      xx=x3d[n2d,0]; yy=x3d[n2d,2]
+      self.x2d = [xx, yy]  # ✅ This line initializes self.x2d
+    def PlotlyPlot(self):
+      """Generate a Plotly figure and return it as JSON for Flask rendering."""
 
-    def PlotlyPlot(self,O={}):
-      [xx,yy] = self.x2d; [x,y,z] = self.x3d.transpose(); [i,j,k] = self.ien.transpose()
+      # Ensure mesh data exists before plotting
+      if not hasattr(self, "x2d") or not hasattr(self, "x3d") or not hasattr(self, "ien"):
+          print("Error: Mesh data is missing!")
+          return json.dumps({"error": "Mesh data not initialized"})  # Return empty JSON if data is missing
 
-      fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scatter'}, {'type': 'mesh3d'}]],)
-      fig.add_trace(go.Scatter(x=xx, y=yy, mode="lines",), row=1, col=1, )
-      fig.add_trace(  go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, color='skyblue', opacity=0.50),  row=1, col=2)
-      fig.update_yaxes(scaleanchor="x", scaleratio=1,  )
-      fig.update_layout(height=600, width=800)
-      fig.show()
+      [xx, yy] = self.x2d
+      [x, y, z] = self.x3d.transpose()
+      [i, j, k] = self.ien.transpose()
+      data = {"x2d":self.x2d, "x3d":self.x3d.transpose(), "ien":self.ien}
+
+      return data
+      # Create the Plotly figure
+      #fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scatter'}, {'type': 'mesh3d'}]])
+
+      #fig.add_trace(go.Scatter(x=xx, y=yy, mode="lines"), row=1, col=1)
+      #fig.add_trace(go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, color='skyblue', opacity=0.50), row=1, col=2)
+
+      #fig.update_yaxes(scaleanchor="x", scaleratio=1)
+      #fig.update_layout(height=600, width=800)
+
+      #return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)  # ✅ Ensure valid JSON format
 
     def PlotFromFile(self,fn):
       [xx,yy] = self.x2d;

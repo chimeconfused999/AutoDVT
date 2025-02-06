@@ -1,6 +1,5 @@
 from flask import Flask, request
-import numpy as np
-import install
+import numpy as np, stl2
 
 
 

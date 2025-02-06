@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D STL Generator</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+    <h1>STL Generator</h1>
+
+    <form id="paramForm">
+        {% for key, param in params.items() %}
+            <label>{{ param["desc"] }}</label>
+            <input type="text" name="{{ key }}" value="{{ param['value'] }}" style="width:100px;">
+        {% endfor %}
+        <button type="button" onclick="updatePlot()">Generate</button>
+    </form>
+
+    <h2>3D Model</h2>
+    <div id="plot"></div>
+
+    <button onclick="updatePlot()">Update Plot</button>
+
+    <script>
+        // mousewheel or two-finger scroll zooms the plot
+        function test() {
+            var trace1 = {
+                        x:['2020-10-04', '2021-11-04', '2023-12-04'],
+                        y: [90, 40, 60],
+                        type: 'scatter'
+                    };
+
+            var data = [trace1];
+
+            var layout = {
+                title: {
+                    text: 'Scroll and Zoom'
+                },
+                showlegend: false
+            };
+
+            Plotly.newPlot('plot', data, layout, {scrollZoom: true});
+        }
+ 
+        function updatePlot() {
+            const formData = new FormData(document.getElementById("paramForm"));
+
+            fetch("/", { method: "POST", body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    if (data.plot) {
+                        const plotData = JSON.parse(data.plot);  // ✅ Convert JSON string into a valid object
+                        Plotly.newPlot("plot", plotData, plotData.layout); // ✅ Render Plotly graph
+                    } else {
+                        console.error("Error: No plot data received");
+                    }
+                })
+                .catch(error => console.error("Error updating plot:", error));
+        }
+
+        // ✅ Load initial plot on page load
+        window.onload = updatePlot;
+    </script>
+</body>
+</html>
