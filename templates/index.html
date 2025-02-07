@@ -37,6 +37,7 @@
         }
         function updatePlot() {
             const formData = new FormData(document.getElementById("paramForm"));
+            console.log(formData)
             fetch("/", { method: "POST", body: formData })
                 .then(response => response.json())
                 .then(data => {
